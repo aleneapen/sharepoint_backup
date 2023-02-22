@@ -9,12 +9,17 @@ import shutil
 import datetime
 import boto3
 import json
+import sys
 
 
 SETTINGS = {}
 
-with open("secrets.json", "r") as f:
-    SETTINGS = json.load(f)
+if len(sys.argv) < 2:
+    raise RuntimeError("You need to provide a settings (secrets) json file")
+else:
+    secrets_filepath = sys.argv[1]
+    with open(secrets_filepath, "r") as f:
+        SETTINGS = json.load(f)
 
 if __name__ == "__main__":
 

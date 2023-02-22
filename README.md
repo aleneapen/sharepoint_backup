@@ -6,7 +6,7 @@ Script to backup sharepoint files/folders to an AWS S3 bucket
     1. This script depends on the Office365-REST-Python-Client module. See this page on getting credentials for the app: https://github.com/vgrem/Office365-REST-Python-Client#Installation
     2. Remember to set the AWS credentials
 2. Install dependencies `pip install -r requirements.txt`
-3. Run the script `python main.py`
+3. Run the script `python main.py PATH_TO_SECRETS_JSON`
 
 The conditions for backup are: 
 
