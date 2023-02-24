@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     def send_to_s3(file_path, bucket_name, aws_file_name):
         s3.meta.client.upload_file(file_path,BACKUP_BUCKET_NAME,aws_file_name)
-        url_first = "https://s3.console.aws.amazon.com/s3/object/{bucket_name}?"
+        url_first = f"https://s3.console.aws.amazon.com/s3/object/{bucket_name}?"
         params = {
             "region": AWS_REGION_NAME,
             "prefix": aws_file_name
@@ -129,8 +129,8 @@ if __name__ == "__main__":
         elif transfer_file:
             filesize_gb = file.length/1000000000
             print(f"file: {file.name} file size: {filesize_gb} GB")
-            with open("large_files.txt", "a+") as f:
-                f.write(f"file: {file.serverRelativeUrl} file size: {filesize_gb} GB\n")
+            with open("transferred_files.txt", "a+") as f:
+                f.write(f"file: {file.resource_url} file size: {filesize_gb} GB\n")
 
             with open(file_path,"wb+") as f:
                 # f.write(b"")
