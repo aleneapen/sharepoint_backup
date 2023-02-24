@@ -92,7 +92,7 @@ if __name__ == "__main__":
     def process_file(file: File, curr_backup_path, ctx: ClientContext, sharepoint_folder: Folder, transfer_folder_ongoing = False):
         transfer_file: bool = False
 
-        converted_file_name: str = file.name.replace(".","_").replace(" ","_") if file.name else ""
+        converted_file_name: str = file.name.replace(".","_").replace(" ","_").replace("+","") if file.name else ""
 
         if converted_file_name == "":
             return
