@@ -10,6 +10,7 @@ import datetime
 import boto3
 import json
 import sys
+import urllib.parse
 
 
 SETTINGS = {}
@@ -79,7 +80,13 @@ if __name__ == "__main__":
 
     def send_to_s3(file_path, bucket_name, aws_file_name):
         s3.meta.client.upload_file(file_path,BACKUP_BUCKET_NAME,aws_file_name)
-        new_sp_file_content = f"[InternetShortcut]\nURL=https://s3.console.aws.amazon.com/s3/object/{bucket_name}?region={AWS_REGION_NAME}&prefix={aws_file_name}"
+        url_first = "https://s3.console.aws.amazon.com/s3/object/{bucket_name}?"
+        params = {
+            "region": AWS_REGION_NAME,
+            "prefix": aws_file_name
+        }
+        url_last = urllib.parse.urlencode(params)
+        new_sp_file_content = f"[InternetShortcut]\nURL={url_first}{url_last}"
         return new_sp_file_content
 
     def process_file(file: File, curr_backup_path, ctx: ClientContext, sharepoint_folder: Folder, transfer_folder_ongoing = False):
