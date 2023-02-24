@@ -139,7 +139,7 @@ if __name__ == "__main__":
                 time.sleep(0.5)
 
             # Upload to AWS
-            aws_file_name = file.name.replace(" ","_") if file.name else ""
+            aws_file_name = file.name.replace(" ","").replace("+","") if file.name else ""
 
             aws_file_name = f"{file.unique_id}_{aws_file_name}"
 
