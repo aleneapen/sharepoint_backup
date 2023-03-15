@@ -101,9 +101,6 @@ if __name__ == "__main__":
             transfer_file = True
             converted_file_name = converted_file_name.replace(PREFIX_FOR_BACKUP,"")
 
-        
-
-
         file_name = f"{PREFIX_AFTER_BACKUP}{converted_file_name}.url"
 
         if transfer_folder_ongoing:
@@ -111,7 +108,7 @@ if __name__ == "__main__":
         else:
             file_path = f"{curr_backup_path}/{converted_file_name}"
         
-        timediff = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime(file.time_last_modified,"%Y-%m-%dT%H:%M:%S%z")
+        timediff = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime(file.time_created,"%Y-%m-%dT%H:%M:%S%z")
 
 
         if (file.length > FILESIZE_CUTOFF_BYTES and timediff.days > DAYS_BEFORE_FILE_SEND):
