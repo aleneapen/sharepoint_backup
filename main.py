@@ -190,9 +190,20 @@ if __name__ == "__main__":
     def recursive_process(ctx: ClientContext, root_folder_name, backup_path, root_folder_path = None, transfer_folder_ongoing = False):
         root_folder = ctx.web.get_folder_by_server_relative_url(root_folder_name).expand(["Files","Folders"])
 
-        ctx.load(root_folder)
-        ctx.execute_query()
-        time.sleep(0.5)
+        success = False
+        try_number = 1
+        while (not success and try_number <= RETRY_AMOUNT):
+            try:
+                ctx.load(root_folder)
+                ctx.execute_query()
+                success = True
+            except Exception as e:
+                print(f"Error: {e}")
+                time.sleep(5)
+                try_number += 1
+                if try_number > RETRY_AMOUNT:
+                    print("Can't load root folder, stopping at this folder")
+                    return
 
         # TODO: change
         if transfer_folder_ongoing:
