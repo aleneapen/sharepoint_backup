@@ -50,6 +50,9 @@ if __name__ == "__main__":
     AWS_SECRET_ACCESS_KEY = aws_settings.get("AWS_SECRET_ACCESS_KEY")
     AWS_REGION_NAME = aws_settings.get("AWS_REGION_NAME")
 
+    SECONDS_BEFORE_RETRY = 5
+    RETRY_AMOUNT = 10
+
     ### END OF VARIABLES
 
 
@@ -78,6 +81,8 @@ if __name__ == "__main__":
         return curr_backup_folder
 
 
+    
+
     def send_to_s3(file_path, bucket_name, aws_file_name):
         s3.meta.client.upload_file(file_path,BACKUP_BUCKET_NAME,aws_file_name)
         url_first = f"https://s3.console.aws.amazon.com/s3/object/{bucket_name}?"
@@ -88,6 +93,25 @@ if __name__ == "__main__":
         url_last = urllib.parse.urlencode(params)
         new_sp_file_content = f"[InternetShortcut]\nURL={url_first}{url_last}"
         return new_sp_file_content
+    
+
+    def file_download(file, f, file_path):
+        success = False
+
+        def print_download_progress(offset):
+            print("Downloaded '{}' bytes... of: {}".format(offset, file_path))
+
+        try_number = 1
+        while (not success and try_number <= RETRY_AMOUNT):
+            try:    
+                file.download_session(f, print_download_progress)
+                ctx.execute_query()
+                success = True
+            except Exception as e:
+                print(f"Error when executing query to download file retrying in {SECONDS_BEFORE_RETRY} seconds")
+                success = False
+                try_number += 1
+                time.sleep(SECONDS_BEFORE_RETRY)
 
     def process_file(file: File, curr_backup_path, ctx: ClientContext, sharepoint_folder: Folder, transfer_folder_ongoing = False):
         transfer_file: bool = False
@@ -114,15 +138,12 @@ if __name__ == "__main__":
         if (file.length > FILESIZE_CUTOFF_BYTES and timediff.days > DAYS_BEFORE_FILE_SEND):
             transfer_file = True
         
-        def print_download_progress(offset):
-            print("Downloaded '{}' bytes... of: {}".format(offset, file_path))
+        
 
         if transfer_folder_ongoing:
             with open(file_path,"wb+") as f:
-                # f.write(b"")
-                file.download_session(f, print_download_progress)
-                ctx.execute_query()
-                time.sleep(0.5)
+                file_download(file,f,file_path)
+                
         elif transfer_file:
             filesize_gb = file.length/1000000000
             print(f"file: {file.name} file size: {filesize_gb} GB")
@@ -130,24 +151,32 @@ if __name__ == "__main__":
                 f.write(f"file: {file.resource_url} file size: {filesize_gb} GB\n")
 
             with open(file_path,"wb+") as f:
-                # f.write(b"")
-                file.download_session(f, print_download_progress)
-                ctx.execute_query()
-                time.sleep(0.5)
+                file_download(file,f,file_path)
 
             # Upload to AWS
             aws_file_name = file.name.replace(" ","").replace("+","") if file.name else ""
 
             aws_file_name = f"{file.unique_id}_{aws_file_name}"
 
-            new_sp_file_content = send_to_s3(file_path,BACKUP_BUCKET_NAME,aws_file_name)
+            success = False
+            try_number = 1
+            while (not success and try_number <= RETRY_AMOUNT):
+                try:
+                    new_sp_file_content = send_to_s3(file_path,BACKUP_BUCKET_NAME,aws_file_name)
 
-            # Add link to SP
-            sharepoint_folder.upload_file(file_name,bytes(new_sp_file_content, 'utf-8'))
+                    # Add link to SP
+                    sharepoint_folder.upload_file(file_name,bytes(new_sp_file_content, 'utf-8'))
 
-            # Recycle file
-            file.recycle()
-            ctx.execute_query()
+                    # Recycle file
+                    file.recycle()
+                    ctx.execute_query()
+                    success = True
+                except Exception as e:
+                    print(f"Error {e}")
+                    print(f"Error when executing query to upload dummy and recycle old file. Retrying in {SECONDS_BEFORE_RETRY} seconds")
+                    success = False
+                    try_number += 1
+                    time.sleep(SECONDS_BEFORE_RETRY)
 
             # Remove local copy
             os.remove(file_path)
@@ -169,6 +198,12 @@ if __name__ == "__main__":
         if transfer_folder_ongoing:
             backup_path = process_folder(root_folder,backup_path)
 
+
+        # # Get all files with the prefix
+        # if root_folder_path:
+        #     all_files = root_folder.get_files(recursive=True)
+        #     for each_file in all_files:
+        #         process_file(each_file, backup_path, ctx, each_file.get_property("fol"))
 
         file: File
         for file in root_folder.get_property("files"):
