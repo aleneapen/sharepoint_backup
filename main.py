@@ -132,7 +132,10 @@ if __name__ == "__main__":
         else:
             file_path = f"{curr_backup_path}/{converted_file_name}"
         
-        timediff = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime(file.time_created,"%Y-%m-%dT%H:%M:%S%z")
+        timediff_created = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime(file.time_created,"%Y-%m-%dT%H:%M:%S%z")
+        timediff_modified = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime(file.time_last_modified,"%Y-%m-%dT%H:%M:%S%z")
+
+        timediff = timediff_created if timediff_created > timediff_modified else timediff_modified
 
 
         if (file.length > FILESIZE_CUTOFF_BYTES and timediff.days > DAYS_BEFORE_FILE_SEND):
