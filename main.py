@@ -224,11 +224,34 @@ if __name__ == "__main__":
                 break
             process_file(file, backup_path, ctx, root_folder, transfer_folder_ongoing)
 
+        # Get folders and sort by size (descending)
+        folders = root_folder.get_property("folders")
+        
+        # Load StorageMetrics for all folders to get their sizes
+        for folder in folders:
+            ctx.load(folder, ["StorageMetrics"])
+        
+        try:
+            ctx.execute_query()
+        except Exception as e:
+            print(f"Warning: Could not load folder sizes: {e}")
+        
+        # Sort folders by total size in descending order
+        sorted_folders = sorted(
+            folders, 
+            key=lambda f: int(f.storage_metrics.total_size) if f.storage_metrics.total_size is not None else 0, 
+            reverse=True
+        )
+        
         folder: Folder
-        for folder in root_folder.get_property("folders"):
+        for folder in sorted_folders:
             
             # If a folder, make a folder in the folder directory
             new_root_folder = f"{root_folder_name}/{folder.get_property('name')}"
+            
+            # Print folder size for visibility
+            folder_size_gb = (int(folder.storage_metrics.total_size) / 1_000_000_000) if folder.storage_metrics.total_size else 0
+            print(f"Processing folder: {folder.get_property('name')} (Size: {folder_size_gb:.2f} GB)")
 
             if transfer_folder_ongoing == False and folder.get_property('name').startswith(PREFIX_FOR_BACKUP):
                 print(f"folder to zip and send: {new_root_folder}")
@@ -255,7 +278,6 @@ if __name__ == "__main__":
 
                 transfer_folder_ongoing=False
             else:
-                print(f"Processing folder: {new_root_folder} transfer status {transfer_folder_ongoing}")
                 recursive_process(ctx, new_root_folder, backup_path, None,transfer_folder_ongoing=transfer_folder_ongoing)
         
     recursive_process(ctx,ROOT_FOLDER_NAME,BACKUP_DIR, root_folder_path)
