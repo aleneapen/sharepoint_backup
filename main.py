@@ -1,4 +1,3 @@
-from office365.runtime.auth.client_credential import ClientCredential
 from office365.sharepoint.client_context import ClientContext
 from office365.sharepoint.folders.folder import Folder
 from office365.sharepoint.files.file import File
@@ -40,7 +39,8 @@ if __name__ == "__main__":
     PREFIX_AFTER_BACKUP = sharepoint_settings.get("PREFIX_AFTER_BACKUP")
     PREFIX_AFTER_BACKUP_FOLDER = sharepoint_settings.get("PREFIX_AFTER_BACKUP_FOLDER")
     SP_CLIENT_ID = sharepoint_settings.get("CLIENT_ID")
-    SP_CLIENT_SECRET = sharepoint_settings.get("CLIENT_SECRET")
+    SP_TENANT = sharepoint_settings.get("TENANT")
+    SP_CERT_THUMBPRINT = sharepoint_settings.get("CERT_THUMBPRINT")
     SITE_URL = sharepoint_settings.get("SITE_URL")
     ROOT_FOLDER_NAME = sharepoint_settings.get("ROOT_FOLDER_NAME")
     
@@ -59,8 +59,7 @@ if __name__ == "__main__":
 
 
     
-    client_credentials = ClientCredential(SP_CLIENT_ID,SP_CLIENT_SECRET)
-    ctx = ClientContext(SITE_URL).with_credentials(client_credentials)
+    ctx = ClientContext(SITE_URL).with_client_certificate(SP_TENANT, SP_CLIENT_ID, SP_CERT_THUMBPRINT, cert_path="./sp_app.key")
     
     
     root_folder_path = "/" + "/".join(SITE_URL.split("sharepoint.com/")[1:]) + ROOT_FOLDER_NAME
