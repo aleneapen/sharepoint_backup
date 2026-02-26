@@ -187,6 +187,7 @@ if __name__ == "__main__":
 
     # upload_folders = SETTINGS.get("UPLOAD_FOLDERS", {})
     should_backup_root_files = SETTINGS.get("BACKUP_ROOT_FILES", True)
+    folders_to_check = SETTINGS.get("FOLDERS_TO_CHECK", [])
     # should_zip_folders = SETTINGS.get("ZIP_FODLERS", True)
 
     def recursive_process(ctx: ClientContext, root_folder_name, backup_path, root_folder_path = None, transfer_folder_ongoing = False):
@@ -224,8 +225,29 @@ if __name__ == "__main__":
                 break
             process_file(file, backup_path, ctx, root_folder, transfer_folder_ongoing)
 
+        # Process FOLDERS_TO_CHECK first if at root level
+        processed_folder_names = set()
+        if root_folder_path and folders_to_check:
+            print(f"\nProcessing priority folders from FOLDERS_TO_CHECK: {len(folders_to_check)}")
+            for folder_name in folders_to_check:
+                print(f"  - {folder_name}")
+                new_root_folder = f"{root_folder_name}/{folder_name}"
+                
+                # Process priority folder directly without loading all folders
+                print(f"Processing priority folder: {new_root_folder}")
+                recursive_process(ctx, new_root_folder, backup_path, None, transfer_folder_ongoing=transfer_folder_ongoing)
+                processed_folder_names.add(folder_name)
+            
+            print(f"\nFinished processing priority folders. Now processing remaining folders...")
+        
+        # Now process remaining folders (skip any that were already processed)
         folder: Folder
         for folder in root_folder.get_property("folders"):
+            folder_name = folder.get_property('name')
+            
+            # Skip folders that were already processed as priority folders
+            if folder_name in processed_folder_names:
+                continue
             
             # If a folder, make a folder in the folder directory
             new_root_folder = f"{root_folder_name}/{folder.get_property('name')}"
